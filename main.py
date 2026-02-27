@@ -91,7 +91,7 @@ class KutuphaneArayuz(QWidget):
 
         
     def kitap_sil_fonksiyonu(self):
-        # 1. Listeden seçili olan satırı bula
+        # 1. Listeden seçili olan satırı bul
         secili_item = self.kitap_listesi.currentItem()
         
         if secili_item:
