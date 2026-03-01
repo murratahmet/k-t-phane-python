@@ -1,3 +1,3 @@
-101,nutuk,Mevcut,Kütüphanede,Yok
-102,sefiller ,Ödüncte,efe,01.03.2026
-103,suç ve ceza,Mevcut,Kütüphanede,Yok
+101 ,nutuk,Mevcut,Kütüphanede,Yok,Yok
+102,sefiller,Mevcut,Kütüphanede,Yok,Yok
+103,kuran,Ödünçte,Murat KARACA,02.03.2026,556415565
