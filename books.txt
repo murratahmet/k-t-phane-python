@@ -1,3 +1,3 @@
-101,nutuk
-102,karamazov kardeşler
-103,sefiller
+101,nutuk,Mevcut,Kütüphanede,Yok
+102,sefiller ,Ödüncte,efe,01.03.2026
+103,suç ve ceza,Mevcut,Kütüphanede,Yok

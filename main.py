@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QMessageBox, QListWidget
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QMessageBox, QListWidget, QInputDialog,QListWidgetItem
 from logic import Book, Library 
 
 class KutuphaneArayuz(QWidget):
@@ -12,7 +12,7 @@ class KutuphaneArayuz(QWidget):
         
         # 2. Arayüzü (butonları ve liste kutusunu) oluştur
         self.init_ui() 
-        
+        self.arayuzu_tazele()
         # 3. Yüklenen verileri ekrandaki listeye (QListWidget) tek tek bas
         for b in self.kutuphane.books:
             # Buradaki formatın kitap_ekle_fonksiyonu ile aynı olmalı!
@@ -45,6 +45,12 @@ class KutuphaneArayuz(QWidget):
         self.sil_buton.clicked.connect(self.kitap_sil_fonksiyonu)
         self.layout.addWidget(self.sil_buton)
 
+        # Bu satırı init_ui içine, diğer butonların olduğu yere ekle
+        self.odunc_buton = QPushButton("Kitabı Ödünç Ver / İade Al")
+        self.odunc_buton.setStyleSheet("background-color: #f39c12; color: white; font-weight: bold;")
+        self.odunc_buton.clicked.connect(self.odunc_islem_fonksiyonu)
+        self.layout.addWidget(self.odunc_buton)
+
         # Kitapları listeleyeceğimiz alan (Tablo)
         self.kitap_listesi = QListWidget() 
         self.layout.addWidget(self.kitap_listesi)
@@ -72,22 +78,22 @@ class KutuphaneArayuz(QWidget):
 
     def kitap_ekle_fonksiyonu(self):
         isbn = self.isbn_input.text()
-        ad = self.ad_input.text()
-        if isbn and ad:
-            yeni_kitap = Book(isbn, ad, "Bilinmiyor", 0, 0)
-            durum, mesaj = self.kutuphane.add_book(yeni_kitap)
-            if durum:
-                QMessageBox.information(self, "Başarılı", mesaj)
-                # Kitabı ekrandaki listeye (QListWidget) ekleyen satır:
-                self.kitap_listesi.addItem(f"ISBN: {isbn} | Kitap: {ad}")
+        baslik = self.ad_input.text()
+        
+        if isbn and baslik:
+            from logic import Book
+            yeni_kitap = Book(isbn, baslik, "Bilinmiyor", 0, 0)
+            basarili, mesaj = self.kutuphane.add_book(yeni_kitap)
+            
+            if basarili:
+                # Sadece düz yazı değil, durum bilgisini de ekliyoruz
+                self.kutuphane.save_to_file()
+                self.arayuzu_tazele()
                 self.isbn_input.clear()
                 self.ad_input.clear()
+               
             else:
-                QMessageBox.warning(self, "Hata", mesaj)
-        else:
-            QMessageBox.critical(self, "Hata", "Lütfen boş alan bırakmayın!")
-
-            self.isbn_input.setFocus() # İmleci otomatik ISBN kutusuna atar
+                QMessageBox.warning(self, "Hata", mesaj) 
 
         
     def kitap_sil_fonksiyonu(self):
@@ -128,7 +134,63 @@ class KutuphaneArayuz(QWidget):
                 item.setHidden(False)
             else:
                 item.setHidden(True)
+
+                from PyQt6.QtWidgets import QInputDialog # Bunu en üste eklemeyi unutma
+
+    def arayuzu_tazele(self):
+        from PyQt6.QtGui import QColor
+        self.kitap_listesi.clear() 
+        for b in self.kutuphane.books:
+            if b.is_borrowed:
+                durum = f" [KİMDEDE: {b.current_holder}]"  
+                renk = QColor("red")
+            else : 
+                durum = " [KÜTÜPHANEDE]"
+                renk = QColor("darkgreen")
+
+            # DÜZELTME: Nesneyi oluştur ve rengi üzerine uygula, değişkene tekrar atama yapma!
+            item = QListWidgetItem(f"ISBN: {b.isbn} | Kitap: {b.get_title()}{durum}")
+            item.setForeground(renk) 
+            self.kitap_listesi.addItem(item)
+
+    def odunc_islem_fonksiyonu(self):
+        import datetime
+        secili_item = self.kitap_listesi.currentItem()
+        if not secili_item:
+            QMessageBox.warning(self, "Hata", "Lütfen bir kitap seçin!")
+            return
+
+        metin = secili_item.text()
+        try:
+            isbn = metin.split("ISBN: ")[1].split(" |")[0]
+            kitap = next((b for b in self.kutuphane.books if b.isbn == isbn), None)
+
+            if kitap:
+                if not kitap.is_borrowed:
+                    isim, onay = QInputDialog.getText(self, "Ödünç Ver", "Kitabı kim alıyor?")
+                    if onay and isim.strip():
+                        kitap.is_borrowed = True
+                        kitap.current_holder = isim
+                        # DÜZELTME: Tarih atamasını onay alındıktan sonra yapıyoruz
+                        kitap.borrow_date = datetime.datetime.now().strftime("%d.%m.%Y")
+                        QMessageBox.information(self, "Başarılı", f"Kitap {isim} kişisine verildi.")
+                else:
+                    cevap = QMessageBox.question(self, "İade", f"Bu kitap {kitap.current_holder} kişisinde. İade alalım mı?",
+                                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                    if cevap == QMessageBox.StandardButton.Yes:
+                        kitap.is_borrowed = False
+                        kitap.current_holder = None
+                        kitap.borrow_date = None # İade edilince tarihi temizle
+                        QMessageBox.information(self, "Başarılı", "Kitap iade alındı.")
+                
+                self.kutuphane.save_to_file()
+                self.arayuzu_tazele()
+        except Exception as e:
+            QMessageBox.critical(self, "Hata", f"İşlem sırasında bir hata oluştu: {e}")
     
+            
+        
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     pencere = KutuphaneArayuz()

@@ -1,12 +1,13 @@
 class Book:
-    def __init__(self, isbn, title, author, pages, year):
+    def __init__(self, isbn, title, author="Bilinmiyor",price=0,stock=0,is_borrowed=False,current_holder=None,borrow_date=None  ):
         self.isbn = isbn  # Benzersiz kimlik
         self.__title = title
         self.__author = author
-        self.__pages = int(pages) # Sayıyı sağlama alalım
-        self.__year = year
-        self.is_borrowed = False
-        self.current_holder = None # Kitap şu an kimde?
+        self.price = price
+        self.stock = stock
+        self.is_borrowed = is_borrowed
+        self.current_holder = current_holder # Kitap şu an kimde?
+        self.borrow_date=borrow_date
 
     def get_title(self): return self.__title
     def get_author(self): return self.__author
@@ -59,28 +60,40 @@ class Library:
         try:
             with open("books.txt", "w", encoding="utf-8") as f:
                 for book in self.books:
+                    durum = "Ödünçte" if book.is_borrowed else "Mevcut"
+                    kimde = book.current_holder if book.current_holder else "Kütüphanede"
+                    tarih=book.borrow_date if book.borrow_date else "Yok"
                     # book.title yerine get_title() metodunu kullanıyoruz
-                    f.write(f"{book.isbn},{book.get_title()}\n")
+                    f.write(f"{book.isbn},{book.get_title()},{durum},{kimde},{tarih}\n")
+                    print("dosya başarıyla güncellendi!")
             return True
         except Exception as e:
-            print(f"Kaydetme hatası: {e}")
+            print(f" Dosya yazma hatası: {e}")
             return False
+           
 
     def load_from_file(self):
-        try:
-            import os
-            if not os.path.exists("books.txt"):
-                return
-                
-            with open("books.txt", "r", encoding="utf-8") as f:
+        self.books=[]
+        try:               
+         with open("books.txt", "r", encoding="utf-8") as f:
                 for line in f:
-                    line = line.strip()
-                    if not line: continue # Boş satırları atla
-                    
+                    line =line.strip()
+                    if not line: continue
+
                     parts = line.split(",")
-                    if len(parts) == 2:
-                        isbn, title = parts
-                        # Yeni kitap nesnesi oluşturup listeye ekle
-                        self.add_book(Book(isbn, title, "Bilinmiyor", 0, 0))
-        except Exception as e:
-            print(f"Yükleme hatası: {e}")
+                    if len (parts)>=4:  # Boş satırları atla
+                       isbn=parts [0]
+                       title=parts[1]
+                       durum=parts[2]
+                       kimde=parts[3]
+                       tarih=parts[4] if len(parts) > 4 else "Yok"
+                   
+                    yeni_kitap=Book (isbn, title, "Bilinmiyor",0,0)
+                    # Dosyadan okunan durumları geri yükle
+                    yeni_kitap.is_borrowed=( durum=='Ödünçte')
+                    yeni_kitap.current_holder= None if kimde == "Kütüphanede" else kimde
+                    yeni_kitap.borrow_date= None if tarih == "Yok" else tarih
+                    self.add_book(yeni_kitap)
+                    print("dosya başarıyla yüklendi")                   
+        except FileNotFoundError:
+            print("Henüz veri dosyası yok, yeni oluşturulacak")
