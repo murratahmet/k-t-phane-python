@@ -1,4 +1,4 @@
-101,Nutuk,Ödünçte,Efe ALGIN,03.03.2026,451585318
+101 ,Nutuk,Ödünçte,Bülent DENIZ,03.03.2026,54112494851
 102,Sefiller,Mevcut,Kütüphanede,Yok,Yok
-130,Suç Ve Ceza,Mevcut,Kütüphanede,Yok,Yok
-104,1984,Mevcut,Kütüphanede,Yok,Yok
+103,Sokratesin Savunması,Mevcut,Kütüphanede,Yok,Yok
+105,Karamazov Kardeşler,Mevcut,Kütüphanede,Yok,Yok

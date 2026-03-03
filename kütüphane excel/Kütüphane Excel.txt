@@ -1,0 +1,5 @@
+﻿ISBN;Kitap Adı;Durum;Kimde;Tarih;Telefon
+101;Nutuk;Ödünçte;Bülent DENIZ;03.03.2026;54112494851
+102;Sefiller;Kütüphanede;-;-;-
+103;Sokratesin Savunması;Kütüphanede;-;-;-
+105;Karamazov Kardeşler;Kütüphanede;-;-;-

@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QMessageBox, QListWidget, QInputDialog,QListWidgetItem,QComboBox    
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QMessageBox, QListWidget, QInputDialog,QListWidgetItem,QComboBox,QFileDialog    
 from logic import Book, Library 
 
 class KutuphaneArayuz(QWidget):
@@ -105,6 +105,11 @@ class KutuphaneArayuz(QWidget):
         self.kamera_buton.setStyleSheet("background-color: #3498db; color: white; font-weight: bold;")
         self.kamera_buton.clicked.connect(self.kamera_ile_tara)
         self.ana_layout.addWidget(self.kamera_buton)
+
+        self.excel_buton = QPushButton("📊 Listeyi Excel (CSV) Olarak Kaydet")
+        self.excel_buton.setStyleSheet("background-color: #27ae60; color: white; font-weight: bold;")
+        self.excel_buton.clicked.connect(self.excel_aktar_fonksiyonu)
+        self.ana_layout.addWidget(self.excel_buton)
 
 
         # Araya küçük bir çizgi (Görsel ayırıcı)
@@ -269,15 +274,16 @@ class KutuphaneArayuz(QWidget):
             if kitap:
                 if not kitap.is_borrowed:
                     # 1. ADI AL
-                    ad, ok1 = QInputDialog.getText(self, "Ödünç Ver", "Okuyucunun Adı:")
+                    ad, ok1 = QInputDialog.getText(self, "Ödünç Ver", "Okuyucunun Adı:")                
                     if not ok1 or not ad.strip(): return # İptal edilirse çık
 
                     # 2. SOYADI AL
-                    soyad, ok2 = QInputDialog.getText(self, "Ödünç Ver", f"{ad} kişisinin Soyadı:")
+                    soyad, ok2 = QInputDialog.getText(self, "Ödünç Ver", f"{ad} kişisinin Soyadı:")                  
                     if not ok2 or not soyad.strip(): return # İptal edilirse çık
 
                     # 3. TELEFONU AL
                     tel, ok3 = QInputDialog.getText(self, "İletişim", f"{ad} {soyad} için telefon:")
+                    if not ok3: return
                     # Telefon zorunlu olmasın diyorsan 'if not ok3: return' yapma
                     
                     # TÜM BİLGİLER TAMAMSA KAYDET
@@ -384,6 +390,39 @@ class KutuphaneArayuz(QWidget):
             print(f"Hata detayı: {e}")
             QMessageBox.warning(self, "Bağlantı Hatası", "İnternet bağlantısı kurulamadı. Lütfen bilgileri manuel giriniz.")  
 
+    def excel_aktar_fonksiyonu(self):
+        import csv
+        from PyQt6.QtWidgets import QFileDialog
+
+    # 1. Bilgisayar sana "Nereye kaydedeyim?" diye soracak
+        dosya_yolu, _ = QFileDialog.getSaveFileName(self, "Raporu Kaydet", "", "CSV Dosyası (*.csv)")
+
+        if dosya_yolu:
+           try:
+            # 2. Seçtiğin dosyayı açıyoruz
+            # 'utf-8-sig' kullanıyoruz ki Excel Türkçe karakterleri (ş, İ, ğ) düzgün göstersin
+               with open(dosya_yolu, mode='w', newline='', encoding='utf-8-sig') as f:
+                    yazar = csv.writer(f, delimiter=';') # Excel noktalı virgülü sever
+                
+                # 3. En üste başlıkları yazıyoruz
+                    yazar.writerow(["ISBN", "Kitap Adı", "Durum", "Kimde", "Tarih", "Telefon"])
+                
+                # 4. Tüm kitapları tek tek dosyaya satır satır yazıyoruz
+                    for kitap in self.kutuphane.books:
+                        durum = "Ödünçte" if kitap.is_borrowed else "Kütüphanede"
+                        yazar.writerow([
+                        kitap.isbn, 
+                        kitap.get_title(), 
+                        durum, 
+                        kitap.current_holder if kitap.current_holder else "-",
+                        kitap.borrow_date if kitap.borrow_date else "-",
+                        kitap.phone if kitap.phone else "-"
+                    ])
+            
+               QMessageBox.information(self, "Başarılı", "Liste başarıyla Excel (CSV) olarak kaydedildi!")
+           except Exception as e:
+               QMessageBox.critical(self, "Hata", f"Kaydedilirken bir sorun oluştu: {e}")
+                
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
