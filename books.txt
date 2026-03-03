@@ -1,4 +1,4 @@
-101,nutuk,Mevcut,Kütüphanede,Yok,Yok
-102,sefiller,Mevcut,Kütüphanede,Yok,Yok
-103,suç ve ceza,Ödünçte,Murat KARACA,02.03.2026,556415565
-9786059645959,putların alacakaranlığı,Mevcut,Kütüphanede,Yok,Yok
+101,Nutuk,Ödünçte,Efe ALGIN,03.03.2026,451585318
+102,Sefiller,Mevcut,Kütüphanede,Yok,Yok
+130,Suç Ve Ceza,Mevcut,Kütüphanede,Yok,Yok
+104,1984,Mevcut,Kütüphanede,Yok,Yok

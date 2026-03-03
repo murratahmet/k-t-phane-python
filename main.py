@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QMessageBox, QListWidget, QInputDialog,QListWidgetItem
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QMessageBox, QListWidget, QInputDialog,QListWidgetItem,QComboBox    
 from logic import Book, Library 
 
 class KutuphaneArayuz(QWidget):
@@ -76,6 +76,21 @@ class KutuphaneArayuz(QWidget):
         self.stats_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 14px; margin-bottom: 10px;")
         self.ana_layout.insertWidget(0, self.stats_label) # En üste yerleştirir
         
+
+        # Filtreleme Etiketi ve Menüsü
+        self.filtre_label = QLabel("Listeyi Filtrele:")
+        self.ana_layout.addWidget(self.filtre_label)
+
+        self.filtre_menu = QComboBox()
+        self.filtre_menu.addItems([
+            "Hepsini Göster", 
+            "Sadece Kütüphanedekiler", 
+            "Sadece Ödünç Verilenler", 
+            "Sadece Gecikenler"
+        ])
+        # Menü her değiştiğinde listeyi otomatik güncelle
+        self.filtre_menu.currentIndexChanged.connect(self.arama_fonksiyonu)
+        self.ana_layout.addWidget(self.filtre_menu)
         # ARAMA BÖLÜMÜ
         self.arama_label = QLabel("Kitap Ara (ISBN veya İsim):")
         self.ana_layout.addWidget(self.arama_label)
@@ -100,7 +115,7 @@ class KutuphaneArayuz(QWidget):
 
     def kitap_ekle_fonksiyonu(self):
         isbn = self.isbn_input.text()
-        baslik = self.ad_input.text()
+        baslik = self.ad_input.text().strip().title()
         
         if isbn and baslik:
             from logic import Book
@@ -146,18 +161,35 @@ class KutuphaneArayuz(QWidget):
         QMessageBox.information(self, "Başarılı", "Kitap listesi books.txt dosyasına kaydedildi!")
 
     def arama_fonksiyonu(self):
-        arama_metni = self.arama_input.text().lower() # Küçük harfe çevirerek ara
-        
-        # Listedeki tüm satırları tek tek kontrol et
+        arama_metni = self.arama_input.text().lower()
+        secili_filtre = self.filtre_menu.currentText().strip() # Boşlukları temizle
+         
         for i in range(self.kitap_listesi.count()):
             item = self.kitap_listesi.item(i)
-            # Eğer satırdaki metin arama kelimesini içeriyorsa göster, içermiyorsa gizle
-            if arama_metni in item.text().lower():
+            satir_metni = item.text().lower()
+            
+            # Filtre uygunluğunu her kitap (item) için döngü içinde kontrol etmeliyiz!
+            filtre_uygunmu = False
+            
+            if secili_filtre == "Hepsini Göster":
+                filtre_uygunmu = True
+            elif secili_filtre == "Sadece Kütüphanedekiler":
+                filtre_uygunmu = "[KÜTÜPHANEDE]" in item.text().upper()
+            elif secili_filtre == "Sadece Ödünç Verilenler":
+                # Senin kodunda "Kimde :" yazıyor, ama listede [KİMDEDE: ...] yazıyor olabilir
+                filtre_uygunmu = "KİMDE" in item.text().upper()
+            elif secili_filtre == "Sadece Gecikenler":
+                filtre_uygunmu = "GECİKTİ" in item.text().upper()
+
+            # Arama metni kontrolü
+            metin_uygunmu = arama_metni in satir_metni
+            
+            # İki şart da sağlanıyorsa göster
+            if metin_uygunmu and filtre_uygunmu:
                 item.setHidden(False)
             else:
                 item.setHidden(True)
-
-                from PyQt6.QtWidgets import QInputDialog # Bunu en üste eklemeyi unutma
+    
 
     def arayuzu_tazele(self):
         from PyQt6.QtGui import QColor
@@ -173,7 +205,7 @@ class KutuphaneArayuz(QWidget):
             ek_uyari = ""
             if b.is_borrowed:
                 odunc_sayisi+=1
-                durum = f" [KİMDEDE: {b.current_holder}]"
+                durum = f" [KİMDE: {b.current_holder}]"
                 renk = QColor("red")
                 
                 # GECİKME KONTROLÜ (15 Gün)
@@ -250,6 +282,7 @@ class KutuphaneArayuz(QWidget):
                     
                     # TÜM BİLGİLER TAMAMSA KAYDET
                     tam_isim = f"{ad.strip().capitalize()} {soyad.strip().upper()}"
+                    kitap.current_holder=tam_isim
                     kitap.is_borrowed = True
                     kitap.current_holder = tam_isim
                     kitap.phone = tel if (ok3 and tel.strip()) else "Yok"
@@ -324,16 +357,23 @@ class KutuphaneArayuz(QWidget):
             data = res.json()
             
             if "items" in data:
-                volume_info = data["items"][0]["volumeInfo"]
-                kitap_adi = volume_info.get("title", "")
-                yazar = ", ".join(volume_info.get("authors", ["Bilinmeyen Yazar"]))
-                
-                if kitap_adi:
-                    self.ad_input.setText(kitap_adi)
-                    QMessageBox.information(self, "Kitap Bulundu", 
-                                          f"📚 Kitap: {kitap_adi}\n✍️ Yazar: {yazar}\n\nBilgiler otomatik dolduruldu!")
-                    # İmleci direkt ekle butonuna odakla ki hızlıca kaydedebil
-                    self.ekle_buton.setFocus()
+                 volume_info = data["items"][0]["volumeInfo"]
+        
+        # 1. Başlığı al ve baş harflerini büyük yap (.title())
+                 raw_title = volume_info.get("title", "Bilinmeyen Kitap")
+                 kitap_adi = raw_title.title() 
+        
+        # 2. Yazarları al ve onları da düzgün formatla
+                 authors = volume_info.get("authors", ["Bilinmeyen Yazar"])
+                 yazar = ", ".join(authors).title()
+        
+        # 3. Arayüzdeki kutucuğu güncelle
+                 self.ad_input.setText(kitap_adi)
+        
+        # 4. Kullanıcıya bilgi ver
+                 QMessageBox.information(self, "Kitap Bulundu", 
+                              f"📚 Kitap: {kitap_adi}\n✍️ Yazar: {yazar}\n\nBilgiler otomatik dolduruldu!")
+                 self.ekle_buton.setFocus()
             else:
                 # EĞER BULUNAMAZSA: Kullanıcıyı bilgilendir ama kutuyu temizleme, 
                 # belki ISBN doğrudur ama isim yoktur.
@@ -342,7 +382,9 @@ class KutuphaneArayuz(QWidget):
                 self.ad_input.setFocus() # Kitap adı kutusuna zıpla
         except Exception as e:
             print(f"Hata detayı: {e}")
-            QMessageBox.warning(self, "Bağlantı Hatası", "İnternet bağlantısı kurulamadı. Lütfen bilgileri manuel giriniz.")        
+            QMessageBox.warning(self, "Bağlantı Hatası", "İnternet bağlantısı kurulamadı. Lütfen bilgileri manuel giriniz.")  
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     pencere = KutuphaneArayuz()
