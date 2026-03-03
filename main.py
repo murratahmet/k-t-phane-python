@@ -23,7 +23,7 @@ class KutuphaneArayuz(QWidget):
 
         self.ana_layout = QVBoxLayout()
 
-        self.stats_label = QLabel ("Yükleniyor...")
+        self.stats_label = QLabel ("Kütüphane Kitapları Hazırlıyor...")
         self.stats_label.setStyleSheet("""
             background-color: #34495e; 
             color: white; 
@@ -38,7 +38,8 @@ class KutuphaneArayuz(QWidget):
         self.ana_layout.addWidget(self.bilgi_label)
 
         self.isbn_input = QLineEdit()
-        self.isbn_input.setPlaceholderText("ISBN Numarası")
+        self.isbn_input.setPlaceholderText("ISBN Numarası (veya Barkod Okutun)")
+        self.isbn_input.returnPressed.connect(self.kitap_ekle_fonksiyonu)
         self.ana_layout.addWidget(self.isbn_input)
 
         self.ad_input = QLineEdit()
@@ -84,6 +85,12 @@ class KutuphaneArayuz(QWidget):
         # Yazı yazıldığı anda arama yapması için:
         self.arama_input.textChanged.connect(self.arama_fonksiyonu) 
         self.ana_layout.addWidget(self.arama_input)
+        
+        self.kamera_buton = QPushButton("📷 Kamera ile Barkod Tara")
+        self.kamera_buton.setStyleSheet("background-color: #3498db; color: white; font-weight: bold;")
+        self.kamera_buton.clicked.connect(self.kamera_ile_tara)
+        self.ana_layout.addWidget(self.kamera_buton)
+
 
         # Araya küçük bir çizgi (Görsel ayırıcı)
         çizgi = QLabel("------------------------------------------")
@@ -267,8 +274,75 @@ class KutuphaneArayuz(QWidget):
             QMessageBox.critical(self, "Hata", f"İşlem sırasında bir hata oluştu: {e}")
     
             
-        
+    def kamera_ile_tara(self):
+        import cv2
+        from pyzbar import pyzbar
+        import requests
 
+        cap = cv2.VideoCapture(0) # Kamerayı aç
+        if not cap.isOpened():
+            QMessageBox.critical(self, "Hata", "Kamera açılmadı!")
+            return
+
+        QMessageBox.information(self, "Bilgi", "Barkodu kameraya gösterin. Kapatmak için penceredeyken 'q'ya basın.")
+
+        while True:
+            ret, frame = cap.read()
+            if not ret: break
+
+            # Barkodları tara
+            barcodes = pyzbar.decode(frame)
+            for barcode in barcodes:
+                isbn = barcode.data.decode("utf-8")
+                self.isbn_input.setText(isbn) # ISBN'yi kutuya yaz
+                
+                # Sesi andıran bir görsel geri bildirim için çerçeve çizelim
+                (x, y, w, h) = barcode.rect
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                
+                cap.release()
+                cv2.destroyAllWindows()
+                
+                # OTOMATİK BİLGİ ÇEKME
+                self.google_dan_bilgi_cek(isbn)
+                return
+
+            cv2.imshow("Barkod Taraniyor...", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'): break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+    def google_dan_bilgi_cek(self, isbn):
+        import requests
+        # ISBN içindeki tireleri veya boşlukları temizleyelim (API temiz veri sever)
+        temiz_isbn = isbn.replace("-", "").replace(" ", "").strip()
+        url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{temiz_isbn}"
+        
+        try:
+            res = requests.get(url, timeout=5)
+            data = res.json()
+            
+            if "items" in data:
+                volume_info = data["items"][0]["volumeInfo"]
+                kitap_adi = volume_info.get("title", "")
+                yazar = ", ".join(volume_info.get("authors", ["Bilinmeyen Yazar"]))
+                
+                if kitap_adi:
+                    self.ad_input.setText(kitap_adi)
+                    QMessageBox.information(self, "Kitap Bulundu", 
+                                          f"📚 Kitap: {kitap_adi}\n✍️ Yazar: {yazar}\n\nBilgiler otomatik dolduruldu!")
+                    # İmleci direkt ekle butonuna odakla ki hızlıca kaydedebil
+                    self.ekle_buton.setFocus()
+            else:
+                # EĞER BULUNAMAZSA: Kullanıcıyı bilgilendir ama kutuyu temizleme, 
+                # belki ISBN doğrudur ama isim yoktur.
+                QMessageBox.warning(self, "Bilgi", 
+                                  f"Barkod okundu ({temiz_isbn}), ancak Google veritabanında bu kitabın detayları bulunamadı.\n\nLütfen kitap adını elle giriniz.")
+                self.ad_input.setFocus() # Kitap adı kutusuna zıpla
+        except Exception as e:
+            print(f"Hata detayı: {e}")
+            QMessageBox.warning(self, "Bağlantı Hatası", "İnternet bağlantısı kurulamadı. Lütfen bilgileri manuel giriniz.")        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     pencere = KutuphaneArayuz()

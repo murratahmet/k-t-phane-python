@@ -1,3 +1,4 @@
-101 ,nutuk,Mevcut,Kütüphanede,Yok,Yok
+101,nutuk,Mevcut,Kütüphanede,Yok,Yok
 102,sefiller,Mevcut,Kütüphanede,Yok,Yok
-103,kuran,Ödünçte,Murat KARACA,02.03.2026,556415565
+103,suç ve ceza,Ödünçte,Murat KARACA,02.03.2026,556415565
+9786059645959,putların alacakaranlığı,Mevcut,Kütüphanede,Yok,Yok
