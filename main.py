@@ -19,6 +19,71 @@ class KutuphaneArayuz(QWidget):
         
 
         self.setWindowTitle("Kütüphane Yönetim Paneli")
+       # RESMİ KURUMSAL TEMA (OFFICE STYLE)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f5f5f5;
+                color: #333333;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-size: 13px;
+            }
+            QLabel {
+                font-weight: bold;
+                color: #2c3e50;
+                margin-bottom: 2px;
+            }
+            QLineEdit {
+                background-color: #ffffff;
+                border: 1px solid #bdc3c7;
+                padding: 6px;
+                border-radius: 2px;
+                selection-background-color: #34495e;
+            }
+            QLineEdit:focus {
+                border: 1px solid #7f8c8d;
+            }
+            /* BÜTÜN BUTONLAR İÇİN ORTAK GRİ TASARIM */
+            QPushButton {
+                background-color: #ecf0f1;
+                border: 1px solid #bdc3c7;
+                color: #2c3e50;
+                padding: 8px;
+                border-radius: 3px;
+                min-height: 20px;
+            }
+            QPushButton:hover {
+                background-color: #dcdde1;
+                border: 1px solid #95a5a6;
+            }
+            QPushButton:pressed {
+                background-color: #bdc3c7;
+            }
+            QListWidget {
+                background-color: #ffffff;
+                border: 1px solid #bdc3c7;
+                border-radius: 2px;
+                outline: none;
+                color: #333333; /* <--- KİTAP İSİMLERİNİ SİYAH/KOYU GRİ YAPAR */
+                font-weight: 500;
+            }
+            QListWidget::item {
+                padding: 8px;
+                border-bottom: 1px dashed #eee;
+                color: #333333; /* <--- HER BİR SATIRIN YAZI RENGİNİ GARANTİYE ALIR */
+                font-weight: 500;
+            }
+            QListWidget::item:selected {
+                background-color: #34495e;
+                color: #ffffff; /* <--- SADECE SEÇİLEN KİTABIN YAZISI BEYAZ KALSIN */
+                font-weight: 500;
+            }
+            QComboBox {
+                background-color: #ffffff;
+                border: 1px solid #bdc3c7;
+                padding: 5px;
+                border-radius: 2px;
+            }
+        """)
         self.setGeometry(100, 100, 350, 550)
 
         self.ana_layout = QVBoxLayout()
@@ -47,18 +112,21 @@ class KutuphaneArayuz(QWidget):
         self.ana_layout.addWidget(self.ad_input)
 
         self.ekle_buton = QPushButton("Kütüphaneye Ekle")
+        self.ekle_buton.setStyleSheet("")
         self.ekle_buton.clicked.connect(self.kitap_ekle_fonksiyonu)
         self.ana_layout.addWidget(self.ekle_buton)
+        
 
         self.sil_buton = QPushButton("Seçili Kitabı Sil")
         # Butonun rengini biraz farklı yapalım (Opsiyonel ama şık durur)
-        self.sil_buton.setStyleSheet("background-color: #e74c3c; color: white; font-weight: bold;")
+        self.sil_buton.setStyleSheet("")
         self.sil_buton.clicked.connect(self.kitap_sil_fonksiyonu)
         self.ana_layout.addWidget(self.sil_buton)
+        
 
         # Bu satırı init_ui içine, diğer butonların olduğu yere ekle
         self.odunc_buton = QPushButton("Kitabı Ödünç Ver / İade Al")
-        self.odunc_buton.setStyleSheet("background-color: #f39c12; color: white; font-weight: bold;")
+        self.odunc_buton.setStyleSheet("")
         self.odunc_buton.clicked.connect(self.odunc_islem_fonksiyonu)
         self.ana_layout.addWidget(self.odunc_buton)
 
@@ -67,13 +135,13 @@ class KutuphaneArayuz(QWidget):
         self.ana_layout.addWidget(self.kitap_listesi)
         
         self.kaydet_buton = QPushButton("Tüm Listeyi Kaydet")
-        self.kaydet_buton.setStyleSheet("background-color: #27ae60; color: white; font-weight: bold;")
+        self.kaydet_buton.setStyleSheet("")
         self.kaydet_buton.clicked.connect(self.kaydet_fonksiyonu)
         self.ana_layout.addWidget(self.kaydet_buton)
 
         # İstatistik alanı (Layout'un en başına ekleyebilirsin)
         self.stats_label = QLabel("Toplam Kitap: 0 | Ödünçte: 0 | Geciken: 0")
-        self.stats_label.setStyleSheet("font-weight: bold; color: #2c3e50; font-size: 14px; margin-bottom: 10px;")
+        self.stats_label.setStyleSheet("")
         self.ana_layout.insertWidget(0, self.stats_label) # En üste yerleştirir
         
 
@@ -102,12 +170,12 @@ class KutuphaneArayuz(QWidget):
         self.ana_layout.addWidget(self.arama_input)
         
         self.kamera_buton = QPushButton("📷 Kamera ile Barkod Tara")
-        self.kamera_buton.setStyleSheet("background-color: #3498db; color: white; font-weight: bold;")
+        self.kamera_buton.setStyleSheet("")
         self.kamera_buton.clicked.connect(self.kamera_ile_tara)
         self.ana_layout.addWidget(self.kamera_buton)
 
         self.excel_buton = QPushButton("📊 Listeyi Excel (CSV) Olarak Kaydet")
-        self.excel_buton.setStyleSheet("background-color: #27ae60; color: white; font-weight: bold;")
+        self.excel_buton.setStyleSheet("")
         self.excel_buton.clicked.connect(self.excel_aktar_fonksiyonu)
         self.ana_layout.addWidget(self.excel_buton)
 
