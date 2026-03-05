@@ -266,18 +266,24 @@ class KutuphaneArayuz(QWidget):
 
     def arayuzu_tazele(self):
         from PyQt6.QtGui import QColor
+        from PyQt6.QtWidgets import QListWidgetItem # Import eklendi
         import datetime
         
         self.kitap_listesi.clear() # Listeyi temizle
         bugun = datetime.datetime.now()
-        toplam_kitap=len(self.kutuphane.books)
-        odunc_sayisi=0
-        geciken_sayisi=0
+        
+        # Sayaçları en başta sıfırlıyoruz
+        toplam_kitap = 0
+        odunc_sayisi = 0
+        geciken_sayisi = 0
 
+        # Tek bir döngü ile hem listeyi dolduruyoruz hem sayıları topluyoruz
         for b in self.kutuphane.books:
+            toplam_kitap += 1
             ek_uyari = ""
+            
             if b.is_borrowed:
-                odunc_sayisi+=1
+                odunc_sayisi += 1
                 durum = f" [KİMDE: {b.current_holder}]"
                 renk = QColor("red")
                 
@@ -287,41 +293,27 @@ class KutuphaneArayuz(QWidget):
                         verilis = datetime.datetime.strptime(b.borrow_date, "%d.%m.%Y")
                         fark = (bugun - verilis).days
                         if fark > 15:
-                            geciken_sayisi+=1
+                            geciken_sayisi += 1
                             ek_uyari = f" ⚠️ GECİKTİ! ({fark} gün)"
-                    except:pass
+                    except:
+                        pass
             else:
                 durum = " [KÜTÜPHANEDE]"
-                renk = QColor("white")
+                # Resmi tema (beyaz arka plan) kullandığın için siyah yazı daha iyi okunur
+                renk = QColor("#333333") 
 
-            # Ekrana basılacak metin
+            # Ekrana basılacak metni oluştur ve listeye ekle
             liste_metni = f"ISBN: {b.isbn} | Kitap: {b.get_title()}{durum}{ek_uyari}"
             item = QListWidgetItem(liste_metni)
             item.setForeground(renk) 
             self.kitap_listesi.addItem(item)
 
-            self.stats_label.setText(
-                f" Toplam : {toplam_kitap} | "
-                f" Ödünç : {odunc_sayisi} | "
-                f" Geciken : {geciken_sayisi}"
-            )
-
-            toplam = len(self.kutuphane.books)
-        oduncte = sum(1 for b in self.kutuphane.books if b.is_borrowed)
-        gecikme_sayisi = 0
-        
-        # Gecikme sayısını hesapla (daha önceki tarih mantığıyla aynı)
-        import datetime
-        bugun = datetime.datetime.now()
-        for b in self.kutuphane.books:
-            if b.is_borrowed and b.borrow_date and b.borrow_date != "Yok":
-                try:
-                    verilis = datetime.datetime.strptime(b.borrow_date, "%d.%m.%Y")
-                    if (bugun - verilis).days > 15:
-                        gecikme_sayisi += 1
-                except: pass
-
-        self.stats_label.setText(f"Toplam Kitap: {toplam} | Ödünçte: {oduncte} | Geciken: {gecikme_sayisi}")
+        # İstatistik etiketini döngü BİTTİKTEN sonra (döngüyle aynı hizada) güncelliyoruz
+        self.stats_label.setText(
+            f"Toplam Kitap: {toplam_kitap} | "
+            f"Ödünçte: {odunc_sayisi} | "
+            f"Geciken: {geciken_sayisi}"
+        )
 
     def odunc_islem_fonksiyonu(self):
         import datetime
